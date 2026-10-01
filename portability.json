@@ -1,0 +1,24 @@
+{
+  "protocol": "PortableScaffold/1",
+  "project": "rogue-core",
+  "entrypoints": ["run_demo.py", "worker.py", "rogue.py"],
+  "minimum_runtime": {"python": "3.10", "model_service": "OpenAI-style chat completions or an equivalent explicit adapter"},
+  "configuration": ["--runtime-dir", "--server", "--model-path", "--model", "--gpu-layers", "ROGUE_RUNTIME_DIR", "ROGUE_SERVER_PATH", "ROGUE_MODEL_PATH"],
+  "state": ["new immutable evidence directory per run", "candidate.json checkpoint", "calls.jsonl raw interaction record"],
+  "adapters": ["cognition-endpoint", "owned-inference-process", "model-artifact", "environment-evaluator", "evidence-persistence"],
+  "invariants": [
+    "typed observation derivation inference and action records",
+    "interpretation cannot rewrite observation",
+    "model-dependent plans retain dependencies",
+    "Rogue-Break precedes materially different model commitment",
+    "completion requires environment evidence",
+    "evaluator rule remains outside candidate prompt",
+    "failures raw responses and runtime identity are preserved"
+  ],
+  "verification_commands": [
+    "python -m unittest -v test_core",
+    "python run_demo.py --help"
+  ],
+  "known_platform_variance": ["inference executable", "process metrics and creation flags", "GPU layers", "model format", "endpoint payload"],
+  "authority_boundary": "The candidate acts only through the synthetic environment interface and has no general shell filesystem or network tool."
+}

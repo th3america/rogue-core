@@ -15,7 +15,15 @@ from fixture import TinyWorld
 from rogue import TransitionEngine, WorldStore, digest
 
 ROOT=Path(__file__).resolve().parent
-RUNTIME=ROOT.parent/'greyspark-tool-use-ai-design/local-runtime'
+DEFAULT_RUNTIME=ROOT.parent/'greyspark-tool-use-ai-design/local-runtime'
+
+def resolve_runtime(args):
+    runtime=Path(args.runtime_dir or os.environ.get('ROGUE_RUNTIME_DIR') or DEFAULT_RUNTIME).expanduser().resolve()
+    model_value=args.model_path or os.environ.get('ROGUE_MODEL_PATH')
+    server_value=args.server or os.environ.get('ROGUE_SERVER_PATH')
+    model=Path(model_value).expanduser().resolve() if model_value else (runtime/'models'/args.model).resolve()
+    server=Path(server_value).expanduser().resolve() if server_value else (runtime/'llama-b10930-cuda12.4/llama-server.exe').resolve()
+    return runtime,model,server
 
 def file_hash(path):
     h=hashlib.sha256()
@@ -79,14 +87,14 @@ def run(args):
     out=Path(args.out).resolve()
     if out.exists(): raise ValueError('Use a new run directory; prior outcomes are immutable')
     out.mkdir(parents=True)
-    model=RUNTIME/'models'/args.model
-    server=RUNTIME/'llama-b10930-cuda12.4/llama-server.exe'
-    if not model.is_file() or not server.is_file(): raise FileNotFoundError('Configured local runtime/model missing')
+    runtime,model,server=resolve_runtime(args)
+    if not model.is_file() or not server.is_file():
+        raise FileNotFoundError(f'Configured local runtime/model missing: server={server}; model={model}')
     with socket.socket() as sock:
         sock.bind(('127.0.0.1',0)); port=sock.getsockname()[1]
     contract={'prompt':SYSTEM,'schema':SCHEMA,'temperature':0,'seed':17,'output_tokens':280,
               'model':str(model),'model_bytes':model.stat().st_size,'model_sha256':file_hash(model),
-              'runtime':str(server),'runtime_sha256':file_hash(server),
+              'runtime':str(server),'runtime_root':str(runtime),'runtime_sha256':file_hash(server),
               'source_hashes':{p.name:file_hash(p) for p in ROOT.glob('*.py')},
               'candidate_prompt_fixture_rule_included':False,'outside_cognitive_assistance_during_run':False,
               'limits':{'model_calls':20,'actions':16,'worker_seconds':600,'global_seconds':1100,
@@ -144,5 +152,8 @@ def run(args):
 if __name__=='__main__':
     p=argparse.ArgumentParser(); p.add_argument('--out',required=True)
     p.add_argument('--model',default='Phi-3-mini-4k-instruct-q4.gguf'); p.add_argument('--gpu-layers',type=int,default=99)
+    p.add_argument('--runtime-dir',help='Runtime root; defaults to ROGUE_RUNTIME_DIR or the legacy sibling layout')
+    p.add_argument('--server',help='Inference server executable; defaults to ROGUE_SERVER_PATH or runtime layout')
+    p.add_argument('--model-path',help='Model file; defaults to ROGUE_MODEL_PATH or runtime/models/--model')
     run(p.parse_args())
 

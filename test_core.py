@@ -4,12 +4,15 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from types import SimpleNamespace
+from unittest.mock import patch
 from pathlib import Path
 from cognition import SYSTEM
 from fixture import TinyWorld
 from rogue import (Rule, Rogue, WorldStore, ObservationEngine, TransitionEngine,
                    ExperimentEngine, HistoryEngine, digest)
 from worker import execute_turn
+from run_demo import resolve_runtime
 
 
 def decision(op='FOLLOW_PLAN',model='x+dx',control=1):
@@ -19,6 +22,14 @@ def decision(op='FOLLOW_PLAN',model='x+dx',control=1):
 
 
 class CoreTests(unittest.TestCase):
+    def test_runtime_paths_are_explicitly_replaceable(self):
+        args=SimpleNamespace(runtime_dir='runtime-root',model_path='chosen/model.gguf',server='chosen/server',model='ignored.gguf')
+        with patch.dict('os.environ',{},clear=True):
+            runtime,model,server=resolve_runtime(args)
+        self.assertEqual(runtime.name,'runtime-root')
+        self.assertEqual(model.name,'model.gguf')
+        self.assertEqual(server.name,'server')
+
     def test_expression_rejects_code_and_unbounded_values(self):
         for expr in ["__import__('os')",'x.__class__','[x for x in range(2)]','2**999','100000','hidden_rule']:
             with self.subTest(expr=expr), self.assertRaises((ValueError,SyntaxError)): Rule(expr)

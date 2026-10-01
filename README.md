@@ -2,11 +2,21 @@
 
 A local synthetic demonstration of dependency-carrying models, model revision, conditional planning, and governed action. This is the first executable slice, not a complete Synthient or an ARC competition result.
 
+To adapt the mechanical core, model runtime, or evaluator to another system,
+read [PORTING.md](PORTING.md) and [`portability.json`](portability.json). The
+mechanical and learned-runtime verification layers remain deliberately separate.
+The shared conversion method lives in
+[Sparkitecture001](https://github.com/th3america/Sparkitecture001/blob/main/CONVERSION-GUIDE.md).
+
 ## Candidate boundary
 
 The five engines and Maestro controller live in `rogue.py` in one worker process. Learned interpretation comes from an already-installed local model through a temporary loopback inference companion. The evaluator owns `fixture.py`; its rule and source are absent from the candidate prompt. The candidate has no general filesystem, network, shell, retrieval-of-builder-notes, or external-assistance operation. It sees the declared observation/action interface, its own working record, and tool results. These are interface restrictions, not a demonstrated hostile-process sandbox.
 
-This prototype depends on Python and the existing sibling Greyspark runtime/model directory. It is locally executable but not yet a standalone portable package. The inference service and evaluator are separate supporting processes. Changing that to a literally single-process deployable entity remains packaging work.
+This prototype depends on Python and an operator-supplied local inference
+runtime/model. `run_demo.py` accepts explicit runtime, server, and model paths;
+the original sibling layout remains only a compatibility fallback. The
+inference service and evaluator are separate supporting processes. Changing
+that to a literally single-process deployable entity remains packaging work.
 
 ## What is implemented
 
